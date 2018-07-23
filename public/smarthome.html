@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+            const key = window.localStorage.getItem('key');
+            
+            if(key == ""){
+                window.location.href = '/signin'
+            }
+            else{
+                let xhttp = new XMLHttpRequest();
+                
+                xhttp.onreadystatechange = function(){
+                    switch(this.readyState) {
+                        case 0:
+                            console.log("request not initialized");
+                            break;
+                        case 1:
+                            console.log("server connection established");
+                            break;
+                        case 2:
+                            console.log("request received");
+                            break;
+                        case 3:
+                            console.log("processing request");
+                            break;
+                        case 4:
+                            console.log("request finished and response is ready");
+                            processResponse(this, (err, data)=>{
+                                if(err){
+                                    console.log(err);
+                                }
+                                else{
+                                    console.log("received data");
+                                    console.log(data);
+                                    document.getElementById("devices").innerHTML = JSON.stringify(data);
+                              }
+                            });
+                            break;
+                    }
+                }
+                
+                xhttp.open("POST", "/smarthome", true);
+                xhttp.setRequestHeader("Content-type", "application/json");
+                xhttp.setRequestHeader("Cache-Control", "no-cache, no-store");
+                xhttp.setRequestHeader("Authorization", key);
+                xhttp.send();
+            }
+            
+            function processResponse(xhttp, callback){
+                console.log("processing response");
+                if(xhttp.status == 404){
+                    window.location.href = '/signin'
+                }
+                else if(xhttp.status == 500){
+                    return callback(new Error("request returned 500"));
+                }
+                else if(xhttp.status == 401){
+                    window.location.href = '/signin';
+                }
+                else if(xhttp.status == 200){
+                    let response = JSON.parse(xhttp.responseText);
+                    return callback(null, response);
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="devices"></div>
+    </body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <script>
+            function signin(){
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                if(username == "" || password == ""){
+                    alert("field not filled in");
+                }
+                else{
+                    let xhttp = new XMLHttpRequest();
+                    
+                    xhttp.onreadystatechange = function(){
+                        switch(this.readyState) {
+                            case 0:
+                                console.log("request not initialized");
+                                break;
+                            case 1:
+                                console.log("server connection established");
+                                break;
+                            case 2:
+                                console.log("request received");
+                                break;
+                            case 3:
+                                console.log("processing request");
+                                break;
+                            case 4:
+                                console.log("request finished and response is ready");
+                                processResponse(this, (err, token)=>{
+                                    if(err){
+                                        console.log(err);
+                                    }
+                                    else{
+                                        const queries = query(window.location.search);
+                                        const redirect_uri = queries.redirect_uri;
+                                        const state = queries.state;
+                                        const url = `${redirect_uri}#access_token=${token}&token_type=bearer&state=${state}`
+                                        window.location.href = url;
+                                  }
+                                });
+                                break;
+                        }
+                    }
+                    
+                    console.log(username, password);
+                    
+                    xhttp.open("POST", "/signin", true);
+                    xhttp.setRequestHeader("Content-type", "application/json");
+                    xhttp.setRequestHeader("Cache-Control", "no-cache, no-store");
+                    let data = {
+                        username:username,
+                        password:password
+                    };
+                    xhttp.send(JSON.stringify(data));
+                }
+                
+            }
+            
+            function query(query) {
+                let params = {};
+                let queries = query.split("&");
+                for (let i = 0; i < queries.length; i++ ) {
+                    let q = queries[i].split('=');
+                    params[q[0]] = q[1];
+                }
+                return params;
+            };
+            
+            function processResponse(xhttp, callback){
+                console.log("processing response");
+                if(xhttp.status == 404){
+                    return callback(new Error("request returned 404"));
+                }
+                else if(xhttp.status == 500){
+                    return callback(new Error("request returned 500"));
+                }
+                else if(xhttp.status == 200){
+                    let response = JSON.parse(xhttp.responseText);
+                    console.log("key: "+response.auth_key);
+                    if(response.auth_key == 0){
+                        return callback(new Error('credential incorrect'));
+                    }
+                    else{
+                        window.localStorage.setItem('key', response.auth_key );
+                        return callback(null, response.auth_key);
+                    }
+                }
+            }
+            
+        </script>
+    </head>
+    <body>
+        <input type="text" placeholder="username" id='username' value="test"><br/>
+        <input type="password" placeholder="password" id="password" value="test"><br/>
+        <button onclick="signin()">sign in</button>
+    </body>
+</html>

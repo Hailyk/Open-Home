@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <script>
+            function signup(){
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const repassword = document.getElementById('repassword').value;
+                
+                if(username == "" || password == "" || repassword == ""){
+                    alert("field not filled in");
+                }
+                
+                if(password != repassword){
+                    alert("password doens't match");
+                }
+                else{
+                    let xhttp = new XMLHttpRequest();
+                    
+                    xhttp.onreadystatechange = function(){
+                        switch(this.readyState) {
+                            case 0:
+                                console.log("request not initialized");
+                                break;
+                            case 1:
+                                console.log("server connection established");
+                                break;
+                            case 2:
+                                console.log("request received");
+                                break;
+                            case 3:
+                                console.log("processing request");
+                                break;
+                            case 4:
+                                console.log("request finished and response is ready");
+                                processResponse(this, (err, key)=>{
+                                    if(err){
+                                        console.log(err);
+                                    }
+                                    else{
+                                        console.log("signup complete, redirecting");
+                                        window.location.href = '/smarthome?origin=signup';
+                                  }
+                                });
+                                break;
+                        }
+                    }
+                    
+                    console.log(username, password, repassword);
+                    
+                    xhttp.open("POST", "/signup", true);
+                    xhttp.setRequestHeader("Content-type", "application/json");
+                    xhttp.setRequestHeader("Cache-Control", "no-cache, no-store");
+                    let data = {
+                        username:username,
+                        password:password
+                    };
+                    xhttp.send(JSON.stringify(data));
+                }
+                
+            }
+            
+            function processResponse(xhttp, callback){
+                console.log("processing response");
+                if(xhttp.status == 404){
+                    return callback(new Error("request returned 404"));
+                }
+                else if(xhttp.status == 500){
+                    return callback(new Error("request returned 500"));
+                }
+                else if(xhttp.status == 200){
+                    let response = JSON.parse(xhttp.responseText);
+                    console.log("key: "+response.auth_key);
+                    if(response.auth_key == 0){
+                        return callback(new Error('user already exist'));
+                    }
+                    else{
+                        window.localStorage.setItem('key', response.auth_key );
+                        return callback(null, response.auth_key);
+                    }
+                }
+            }
+            
+        </script>
+    </head>
+    <body>
+        <input type="text" placeholder="username" id='username' value="test"><br/>
+        <input type="password" placeholder="password" id="password" value="test"><br/>
+        <input type="password" placeholder="retype password" id="repassword" value="test"><br/>
+        <button onclick="signup()">sign up</button>
+    </body>
+</html>
